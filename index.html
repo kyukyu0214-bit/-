@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>가계부</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface2: #f0f1f5;
+  --border: #e4e6ed;
+  --text: #1a1a2e;
+  --text2: #6b7280;
+  --text3: #adb5bd;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --green: #10b981;
+  --red: #ef4444;
+  --red-light: #fef2f2;
+  --yellow: #f59e0b;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --mono: 'DM Mono', monospace;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 430px; margin: 0 auto; }
+
+.header {
+  background: var(--surface); padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow);
+}
+.header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.month-nav { display: flex; align-items: center; gap: 4px; }
+.month-nav button {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); width: 30px; height: 30px; border-radius: 8px;
+  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.month-nav span { font-family: var(--mono); font-size: 12px; color: var(--text2); min-width: 60px; text-align: center; }
+.bell-btn {
+  position: relative; background: var(--surface2); border: 1px solid var(--border);
+  width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.bell-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--red); color: white; font-size: 9px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px; border: 2px solid var(--surface);
+}
+
+.content { padding: 14px 14px 100px; display: flex; flex-direction: column; gap: 12px; }
+
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.card-header { padding: 14px 16px 0; display: flex; justify-content: space-between; align-items: center; }
+.card-title { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; }
+.card-body { padding: 10px 16px 16px; }
+
+.summary-amount { font-family: var(--mono); font-size: 32px; font-weight: 500; color: var(--text); letter-spacing: -1px; margin: 6px 0 12px; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.summary-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.s-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+.s-value { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.s-green { color: var(--green); }
+.s-red { color: var(--red); }
+
+.budget-section { padding: 12px 16px 14px; border-top: 1px solid var(--border); }
+.budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.budget-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.budget-edit-btn { font-size: 11px; color: var(--accent); background: var(--accent-light); border: none; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+.gauge-track { height: 12px; background: var(--surface2); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 6px; }
+.gauge-fill { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+.gauge-labels { display: flex; justify-content: space-between; }
+.gauge-pct { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.gauge-remain { font-size: 11px; color: var(--text3); }
+.budget-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 4px; }
+.budget-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
+.budget-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: var(--mono); background: var(--surface2); color: var(--text); outline: none; }
+.budget-input:focus { border-color: var(--accent); }
+.budget-save-btn { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+
+.bar-wrap { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 14px; }
+.bar-row { display: flex; align-items: center; gap: 8px; }
+.bar-name { font-size: 11px; color: var(--text2); width: 52px; text-align: right; flex-shrink: 0; }
+.bar-track2 { flex: 1; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.bar-fill2 { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+.bar-amt { font-family: var(--mono); font-size: 11px; color: var(--text); width: 68px; text-align: right; flex-shrink: 0; }
+
+.tx-list { display: flex; flex-direction: column; }
+.tx-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer; gap: 10px; transition: background 0.1s; }
+.tx-item:last-child { border-bottom: none; }
+.tx-item:active { background: var(--surface2); }
+.tx-item.unread { background: #fffdf0; }
+.tx-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.tx-merchant { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-meta { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.tx-cat { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.badge { font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 500; }
+.b-shinhan { background: #dbeafe; color: #1d4ed8; }
+.b-kb { background: #fef3c7; color: #92400e; }
+.b-hyundai { background: #ffedd5; color: #9a3412; }
+.b-cancel { background: var(--red-light); color: var(--red); }
+.tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.tx-amount { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+.tx-amount.ap { color: var(--text); }
+.tx-amount.ca { color: var(--red); }
+
+.filter-row { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px 0; scrollbar-width: none; }
+.filter-row::-webkit-scrollbar { display: none; }
+.fbtn { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Noto Sans KR', sans-serif; }
+.fbtn.active { background: var(--accent); color: white; border-color: var(--accent); font-weight: 500; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 430px; padding: 20px; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cat-btn { padding: 10px 6px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface2); font-size: 12px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s; }
+.cat-btn.selected { border-color: var(--accent); background: var(--accent); color: white; }
+.cat-icon { font-size: 20px; }
+.modal-close { width: 100%; margin-top: 12px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; color: var(--text2); }
+
+.notif-panel { position: fixed; top: 68px; right: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); width: 290px; max-height: 380px; overflow-y: auto; z-index: 100; }
+.notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.notif-clear { font-size: 11px; color: var(--accent); cursor: pointer; background: none; border: none; font-family: 'Noto Sans KR', sans-serif; }
+.notif-item { padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.notif-item:last-child { border-bottom: none; }
+.notif-item.unread { background: #fffdf0; }
+.notif-merchant { font-size: 13px; font-weight: 500; }
+.notif-detail { font-size: 11px; color: var(--text2); display: flex; gap: 6px; margin-top: 2px; }
+.notif-empty { padding: 24px; text-align: center; color: var(--text3); font-size: 13px; }
+
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding: 8px 0 20px; z-index: 50; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 4px; }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; color: var(--text3); font-family: 'Noto Sans KR', sans-serif; }
+.nav-btn.active .nav-label { color: var(--accent); font-weight: 600; }
+
+.loading { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 14px; }
+.empty { text-align: center; padding: 32px; color: var(--text3); font-size: 13px; line-height: 1.6; }
+.fixed-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.fixed-item:last-child { border-bottom: none; }
+.fixed-name { font-size: 13px; font-weight: 500; }
+.fixed-count { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.fixed-amt { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">가계부 💳</div>
+  <div class="header-right">
+    <button class="bell-btn" onclick="toggleNotif()" id="bell">
+      🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
+    </button>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span id="month-label">2026/04</span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <div class="loading">데이터 불러오는 중...</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showTab('home',this)"><span class="nav-icon">⌂</span><span class="nav-label">홈</span></button>
+  <button class="nav-btn" onclick="showTab('history',this)"><span class="nav-icon">☰</span><span class="nav-label">내역</span></button>
+  <button class="nav-btn" onclick="showTab('fixed',this)"><span class="nav-icon">📌</span><span class="nav-label">고정지출</span></button>
+  <button class="nav-btn" onclick="showTab('stats',this)"><span class="nav-icon">◎</span><span class="nav-label">분석</span></button>
+</nav>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbwWkbN_CoAh_WP9NbCTrLXjz4KlnfTJxoUay9k3vxOWBDrZ0IMArIcZp_1pfpLHdVZ7/exec';
+const CATEGORIES=[
+  {id:'식비',icon:'🍚'},{id:'카페',icon:'☕'},{id:'쇼핑',icon:'🛍'},
+  {id:'교통',icon:'🚗'},{id:'의료',icon:'🏥'},{id:'문화',icon:'🎬'},
+  {id:'구독',icon:'📱'},{id:'관리비',icon:'🏠'},{id:'고정지출',icon:'📌'},{id:'기타',icon:'📦'}
+];
+const FIXED_CATS=['구독','관리비','고정지출'];
+let allData=[],currentYear='2026',currentMonth='04',currentTab='home',budget=0;
+let readRows=new Set(JSON.parse(localStorage.getItem('readRows')||'[]'));
+
+function pa(s){return parseInt(String(s).replace(/,/g,''))||0;}
+function fa(n){return n.toLocaleString()+'원';}
+function getMonthData(){return allData.filter(d=>{const dt=String(d.date);return dt.startsWith(currentYear+'/'+currentMonth)||dt.startsWith(currentYear+'-'+currentMonth);});}
+function badgeClass(c){c=String(c);if(c.includes('신한'))return 'b-shinhan';if(c.includes('KB')||c.includes('국민'))return 'b-kb';if(c.includes('현대'))return 'b-hyundai';return '';}
+function cardShort(c){return String(c).replace('카드','').replace('국민','KB');}
+function getUnread(){return allData.filter(d=>d.type==='승인'&&!readRows.has(String(d.row)));}
+function markRead(row){readRows.add(String(row));localStorage.setItem('readRows',JSON.stringify([...readRows]));updateBell();}
+function updateBell(){const n=getUnread().length;const b=document.getElementById('bell-badge');if(b){b.style.display=n>0?'flex':'none';b.textContent=n>9?'9+':n;}}
+
+function toggleNotif(){
+  const existing=document.getElementById('notif-panel');
+  if(existing){existing.remove();return;}
+  const unread=getUnread();
+  const items=unread.length>0?unread.map(d=>`<div class="notif-item unread" onclick="markRead(${d.row});document.getElementById('notif-panel')?.remove()"><div class="notif-merchant">${d.merchant||'미확인'}</div><div class="notif-detail"><span>${String(d.date).substring(5)} ${String(d.time||'').substring(0,5)}</span><span>${cardShort(d.card)}</span><span style="font-weight:500">${fa(pa(d.amount))}</span></div></div>`).join(''):'<div class="notif-empty">새 알림 없음</div>';
+  const panel=document.createElement('div');
+  panel.id='notif-panel';panel.className='notif-panel';
+  panel.innerHTML=`<div class="notif-header">새 결제 알림<button class="notif-clear" onclick="readRows=new Set(allData.map(d=>String(d.row)));localStorage.setItem('readRows',JSON.stringify([...readRows]));updateBell();document.getElementById('notif-panel')?.remove()">모두 읽음</button></div>${items}`;
+  document.body.appendChild(panel);
+}
+document.addEventListener('click',e=>{const p=document.getElementById('notif-panel');if(p&&!p.contains(e.target)&&!document.getElementById('bell').contains(e.target))p.remove();});
+
+function gaugeColor(pct){if(pct<60)return 'var(--green)';if(pct<85)return 'var(--yellow)';return 'var(--red)';}
+
+function renderBudgetGauge(spent){
+  if(!budget)return`<div class="budget-section"><div class="budget-header"><span class="budget-label">월 예산</span><button class="budget-edit-btn" onclick="showBudgetInput()">+ 예산 설정</button></div><div id="budget-input-area"></div></div>`;
+  const pct=Math.min(Math.round(spent/budget*100),100);
+  const color=gaugeColor(pct);
+  const remain=budget-spent;
+  return`<div class="budget-section"><div class="budget-header"><span class="budget-label">월 예산 게이지</span><button class="budget-edit-btn" onclick="showBudgetInput()">수정</button></div><div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${color}"></div></div><div class="gauge-labels"><span class="gauge-pct" style="color:${color}">${pct}% 사용</span><span class="gauge-remain">${remain>=0?'잔여 '+fa(remain):'초과 '+fa(-remain)}</span></div><div class="budget-sub"><span>지출 ${fa(spent)}</span><span>예산 ${fa(budget)}</span></div><div id="budget-input-area"></div></div>`;
+}
+
+function showBudgetInput(){
+  const area=document.getElementById('budget-input-area');
+  if(!area)return;
+  area.innerHTML=`<div class="budget-input-wrap"><input class="budget-input" type="number" id="bval" placeholder="월 예산 입력 (원)" value="${budget||''}"><button class="budget-save-btn" onclick="saveBudget()">저장</button></div>`;
+  document.getElementById('bval').focus();
+}
+
+function saveBudget(){
+  const val=parseInt(document.getElementById('bval').value)||0;
+  budget=val;
+  jsonpCall('setBudget',{year:currentYear,month:currentMonth,amount:val},()=>renderTab());
+}
+
+function txCard(d,showDate){
+  const isCA=d.type==='취소';
+  const unread=!readRows.has(String(d.row))&&!isCA;
+  const cat=d.category;
+  return`<div class="tx-item${unread?' unread':''}" onclick="openCatModal(${d.row},'${(d.merchant||'').replace(/'/g,"\\'")}','${d.category||''}');markRead(${d.row})">
+    <div class="tx-left">
+      <span class="tx-merchant">${d.merchant||'미확인'}</span>
+      <span class="tx-meta">${showDate?String(d.date).substring(5)+' ':''} ${String(d.time||'').substring(0,5)} <span class="badge ${badgeClass(d.card)}">${cardShort(d.card)}</span>${cat?`<span class="tx-cat">${cat}</span>`:''}${isCA?'<span class="badge b-cancel">취소</span>':''}</span>
+    </div>
+    <div class="tx-right"><span class="tx-amount ${isCA?'ca':'ap'}">${isCA?'-':''}${fa(pa(d.amount))}</span></div>
+  </div>`;
+}
+
+function renderHome(){
+  const md=getMonthData();
+  const ap=md.filter(d=>d.type==='승인');
+  const ca=md.filter(d=>d.type==='취소');
+  const totalAp=ap.reduce((s,d)=>s+pa(d.amount),0);
+  const totalCa=ca.reduce((s,d)=>s+pa(d.amount),0);
+  const net=totalAp-totalCa;
+  const cardMap={};
+  ap.forEach(d=>{cardMap[d.card]=(cardMap[d.card]||0)+pa(d.amount);});
+  const cardColors={'신한':'#3b82f6','KB':'#f59e0b','현대':'#f97316'};
+  const bars=Object.entries(cardMap).map(([card,amt])=>{
+    const pct=totalAp>0?Math.round(amt/totalAp*100):0;
+    const color=Object.entries(cardColors).find(([k])=>card.includes(k))?.[1]||'#888';
+    return`<div class="bar-row"><span class="bar-name">${cardShort(card)}</span><div class="bar-track2"><div class="bar-fill2" style="width:${pct}%;background:${color}"></div></div><span class="bar-amt">${fa(amt)}</span></div>`;
+  }).join('');
+  const recent=[...md].reverse().slice(0,5).map(d=>txCard(d,false)).join('');
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-header"><span class="card-title">이번달 순 지출</span></div>
+      <div class="card-body">
+        <div class="summary-amount">${fa(net)}</div>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="s-label">승인 합계</div><div class="s-value s-green">${fa(totalAp)}</div></div>
+          <div class="summary-item"><div class="s-label">취소 합계</div><div class="s-value s-red">-${fa(totalCa)}</div></div>
+          <div class="summary-item"><div class="s-label">승인 건수</div><div class="s-value">${ap.length}건</div></div>
+          <div class="summary-item"><div class="s-label">취소 건수</div><div class="s-value">${ca.length}건</div></div>
+        </div>
+      </div>
+      ${renderBudgetGauge(net)}
+    </div>
+    ${bars?`<div class="card"><div class="card-header"><span class="card-title">카드사별 지출</span></div><div class="bar-wrap">${bars}</div></div>`:''}
+    <div class="card"><div class="card-header"><span class="card-title">최근 내역</span></div><div class="tx-list">${recent||'<div class="empty">내역 없음</div>'}</div></div>`;
+}
+
+function renderHistory(){
+  let fc='all',ft='all';
+  const md=getMonthData();
+  function render(){
+    const list=[...md].reverse().filter(d=>{
+      if(fc!=='all'&&!String(d.card).includes(fc))return false;
+      if(ft!=='all'&&d.type!==ft)return false;
+      return true;
+    }).map(d=>txCard(d,true)).join('');
+    document.getElementById('hlist').innerHTML=list||'<div class="empty">내역 없음</div>';
+  }
+  document.getElementById('content').innerHTML=`
+    <div class="card" style="overflow:visible">
+      <div class="filter-row" id="cf">
+        <button class="fbtn active" onclick="setCF('all',this)">전체</button>
+        <button class="fbtn" onclick="setCF('신한',this)">신한카드</button>
+        <button class="fbtn" onclick="setCF('KB',this)">KB국민카드</button>
+        <button class="fbtn" onclick="setCF('현대',this)">현대카드</button>
+      </div>
+      <div class="filter-row" id="tf" style="padding-top:8px;padding-bottom:12px">
+        <button class="fbtn active" onclick="setTF('all',this)">전체</button>
+        <button class="fbtn" onclick="setTF('승인',this)">승인</button>
+        <button class="fbtn" onclick="setTF('취소',this)">취소</button>
+      </div>
+      <div class="tx-list" id="hlist"></div>
+    </div>`;
+  window.setCF=(v,b)=>{fc=v;document.querySelectorAll('#cf .fbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();};
+  window.setTF=(v,b)=>{ft=v;document.querySelectorAll('#tf .fbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();};
+  render();
+}
+
+function renderFixed(){
+  const md=getMonthData();
+  const fixed=md.filter(d=>d.type==='승인'&&FIXED_CATS.includes(d.category));
+  const grouped={};
+  fixed.forEach(d=>{if(!grouped[d.category])grouped[d.category]=[];grouped[d.category].push(d);});
+  const total=fixed.reduce((s,d)=>s+pa(d.amount),0);
+  const items=Object.entries(grouped).map(([cat,list])=>{
+    const amt=list.reduce((s,d)=>s+pa(d.amount),0);
+    return`<div class="fixed-item"><div><div class="fixed-name">${cat}</div><div class="fixed-count">${list.length}건</div></div><div class="fixed-amt">${fa(amt)}</div></div>`;
+  }).join('');
+  const detail=[...fixed].reverse().map(d=>txCard(d,true)).join('');
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-header"><span class="card-title">고정지출 합계</span></div>
+      <div class="card-body"><div class="summary-amount" style="font-size:26px">${fa(total)}</div></div>
+      <div class="tx-list">${items||'<div class="empty">고정지출로 분류된 항목이 없어요<br><small>내역에서 항목을 클릭해 분류해주세요</small></div>'}</div>
+    </div>
+    ${detail?`<div class="card"><div class="card-header"><span class="card-title">고정지출 내역</span></div><div class="tx-list">${detail}</div></div>`:''}`;
+}
+
+function renderStats(){
+  const md=getMonthData();
+  const ap=md.filter(d=>d.type==='승인');
+  const totalAp=ap.reduce((s,d)=>s+pa(d.amount),0);
+  const cardMap={},mMap={},catMap={};
+  ap.forEach(d=>{
+    cardMap[d.card]=(cardMap[d.card]||0)+pa(d.amount);
+    const m=d.merchant||'미확인';mMap[m]=(mMap[m]||0)+pa(d.amount);
+    if(d.category)catMap[d.category]=(catMap[d.category]||0)+pa(d.amount);
+  });
+  const colors=['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+  const cardBars=Object.entries(cardMap).map(([card,amt],i)=>{
+    const pct=totalAp>0?Math.round(amt/totalAp*100):0;
+    return`<div class="bar-row"><span class="bar-name">${cardShort(card)}</span><div class="bar-track2"><div class="bar-fill2" style="width:${pct}%;background:${colors[i]||'#888'}"></div></div><span class="bar-amt">${pct}%</span></div>`;
+  }).join('');
+  const top5=Object.entries(mMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxAmt=top5[0]?top5[0][1]:1;
+  const top5Bars=top5.map(([m,amt],i)=>{
+    const pct=Math.round(amt/maxAmt*100);
+    return`<div class="bar-row"><span class="bar-name" style="width:58px;font-size:10px">${m.substring(0,8)}</span><div class="bar-track2"><div class="bar-fill2" style="width:${pct}%;background:${colors[i]||'#888'}"></div></div><span class="bar-amt">${fa(amt)}</span></div>`;
+  }).join('');
+  const catBars=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([cat,amt],i)=>{
+    const pct=totalAp>0?Math.round(amt/totalAp*100):0;
+    return`<div class="bar-row"><span class="bar-name">${cat}</span><div class="bar-track2"><div class="bar-fill2" style="width:${pct}%;background:${colors[i%colors.length]}"></div></div><span class="bar-amt">${fa(amt)}</span></div>`;
+  }).join('');
+  document.getElementById('content').innerHTML=`
+    ${cardBars?`<div class="card"><div class="card-header"><span class="card-title">카드사별 비중</span></div><div class="bar-wrap">${cardBars}</div></div>`:''}
+    ${catBars?`<div class="card"><div class="card-header"><span class="card-title">카테고리별 지출</span></div><div class="bar-wrap">${catBars}</div></div>`:''}
+    <div class="card"><div class="card-header"><span class="card-title">가맹점 TOP 5</span></div><div class="bar-wrap">${top5Bars||'<div class="empty">데이터 없음</div>'}</div></div>`;
+}
+
+function openCatModal(row,merchant,currentCat){
+  document.querySelector('.modal-overlay')?.remove();
+  const btns=CATEGORIES.map(c=>`<button class="cat-btn${c.id===currentCat?' selected':''}" onclick="selectCat(${row},'${c.id}',this)"><span class="cat-icon">${c.icon}</span>${c.id}</button>`).join('');
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`<div class="modal"><div class="modal-handle"></div><div class="modal-title">${merchant||'미확인'}</div><div class="modal-sub">카테고리를 선택해주세요</div><div class="cat-grid">${btns}</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">닫기</button></div>`;
+  document.body.appendChild(overlay);
+}
+
+function selectCat(row,cat,btn){
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const d=allData.find(d=>d.row===row);
+  if(d)d.category=cat;
+  jsonpCall('setCategory',{year:currentYear,row,category:cat},()=>{document.querySelector('.modal-overlay')?.remove();renderTab();});
+}
+
+function showTab(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTab();
+}
+
+function renderTab(){
+  if(currentTab==='home')renderHome();
+  else if(currentTab==='history')renderHistory();
+  else if(currentTab==='fixed')renderFixed();
+  else if(currentTab==='stats')renderStats();
+}
+
+function changeMonth(dir){
+  let m=parseInt(currentMonth)+dir,y=parseInt(currentYear);
+  if(m>12){m=1;y++;} if(m<1){m=12;y--;}
+  currentYear=String(y);currentMonth=String(m).padStart(2,'0');
+  document.getElementById('month-label').textContent=currentYear+'/'+currentMonth;
+  budget=0;loadAll();
+}
+
+function jsonpCall(action,params,cb){
+  const cbName='cb_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  const script=document.createElement('script');
+  const qs=Object.entries({...params,action,callback:cbName}).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  script.src=API+'?'+qs;
+  window[cbName]=function(data){delete window[cbName];document.head.removeChild(script);if(cb)cb(data);};
+  script.onerror=function(){delete window[cbName];document.head.removeChild(script);};
+  document.head.appendChild(script);
+}
+
+function loadAll(){
+  document.getElementById('content').innerHTML='<div class="loading">데이터 불러오는 중...</div>';
+  jsonpCall('getData',{year:currentYear},function(data){
+    allData=data;updateBell();
+    jsonpCall('getBudget',{year:currentYear,month:currentMonth},function(b){
+      budget=parseInt(b.budget)||0;renderTab();
+    });
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>
